@@ -14,14 +14,14 @@ namespace CudaLib
 }	// indent guard
 #endif
 
-__global__ void complexCalcFastLoop(int *a, int *b)
+__global__ void cudaDifference(int *a, int *b)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 	b[i] = a[i] * 2;
 	return;
 }
 
-void complexCalcFast(int *a, int *b, int n)
+void computeDifference(int *a, int *b, int n)
 {
 	int byteCount = n * sizeof(int);
 	int *cudaA;
@@ -31,7 +31,7 @@ void complexCalcFast(int *a, int *b, int n)
 	cudaMemcpy(cudaA, a, byteCount, cudaMemcpyHostToDevice);
 
 	dim3 blockSize = (1, 1);
-	complexCalcFastLoop <<<blockSize, 1024>>> (cudaA, cudaB);
+	cudaDifference <<<blockSize, 1024>>> (cudaA, cudaB);
 	cudaDeviceSynchronize();
 
 	cudaMemcpy(b, cudaB, byteCount, cudaMemcpyDeviceToHost);
