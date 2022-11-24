@@ -2,8 +2,11 @@
 #include "device_launch_parameters.h"
 
 #include <stdio.h>
-
+#include <iostream>
+#include <vector>
 #include "CudaLib.h"
+
+#define byte unsigned char
 
 namespace CudaLib
 {
@@ -11,37 +14,28 @@ namespace CudaLib
 }	// indent guard
 #endif
 
-
-void complexCalcOriginal(int *a, int *b, int n)
+__global__ void complexCalcFastLoop(int *a, int *b)
 {
-	for (int i = 0; i < n; i++) {
-		b[i] = a[i] * 2;
-	}
-}
-
-
-__global__ void complexCalcFastLoop(int *a, int *b, int n)
-{
-	int i = threadIdx.x;
-	if (i < n) {
-		b[i] = a[i] * 2;
-	}
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+	b[i] = a[i] * 2;
+	return;
 }
 
 void complexCalcFast(int *a, int *b, int n)
 {
-	int *dIn;
-	int *dOut;
-	cudaMallocHost((void**)&dIn, n * sizeof(int));
-	cudaMallocHost((void**)&dOut, n * sizeof(int));
-	cudaMemcpy(dIn, a, n * sizeof(int), cudaMemcpyHostToDevice);
+	int byteCount = n * sizeof(int);
+	int *cudaA;
+	int *cudaB;
+	cudaMalloc(&cudaA, byteCount);
+	cudaMalloc(&cudaB, byteCount);
+	cudaMemcpy(cudaA, a, byteCount, cudaMemcpyHostToDevice);
 
-	complexCalcFastLoop <<<1, n>>> (dIn, dOut, n);
+	dim3 blockSize = (1, 1);
+	complexCalcFastLoop <<<blockSize, 1024>>> (cudaA, cudaB);
 	cudaDeviceSynchronize();
 
-	cudaMemcpy(b, dOut, n * sizeof(int), cudaMemcpyDeviceToHost);
-	cudaFree(dIn);
-	cudaFree(dOut);
+	cudaMemcpy(b, cudaB, byteCount, cudaMemcpyDeviceToHost);
+	cudaFree(cudaA);
+	cudaFree(cudaB);
 }
-
 }
