@@ -28,6 +28,9 @@ namespace DesktopStreamer
             int[] c = new int[a.Length];
             ImageManip.Calc(a, b, c);
             Console.WriteLine(c[10]);
+            ImageManip.CalcBytes(a, b, c);
+            Console.WriteLine(a[0]);
+
         }
 
         void SetImage()
