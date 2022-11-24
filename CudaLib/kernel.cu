@@ -21,13 +21,22 @@ __global__ void cudaDifference(int *a, int *b)
 	return;
 }
 
+__global__ void cudaDifference(int* a, int* b, int* c)
+{
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+	c[i] = a[i] + b[i];
+	return;
+}
+
 void computeDifference(int *a, int *b, int n)
 {
 	int byteCount = n * sizeof(int);
 	int *cudaA;
 	int *cudaB;
+
 	cudaMalloc(&cudaA, byteCount);
 	cudaMalloc(&cudaB, byteCount);
+
 	cudaMemcpy(cudaA, a, byteCount, cudaMemcpyHostToDevice);
 
 	dim3 blockSize = (1, 1);
@@ -35,7 +44,33 @@ void computeDifference(int *a, int *b, int n)
 	cudaDeviceSynchronize();
 
 	cudaMemcpy(b, cudaB, byteCount, cudaMemcpyDeviceToHost);
+
 	cudaFree(cudaA);
 	cudaFree(cudaB);
+}
+
+void computeDifference2(int* a, int* b, int* c, int n)
+{
+	int byteCount = n * sizeof(int);
+	int* cudaA;
+	int* cudaB;
+	int* cudaC;
+
+	cudaMalloc(&cudaA, byteCount);
+	cudaMalloc(&cudaB, byteCount);
+	cudaMalloc(&cudaC, byteCount);
+
+	cudaMemcpy(cudaA, a, byteCount, cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaB, b, byteCount, cudaMemcpyHostToDevice);
+
+	dim3 blockSize = (1, 1);
+	cudaDifference << <blockSize, 1024 >> > (cudaA, cudaB, cudaC);
+	cudaDeviceSynchronize();
+
+	cudaMemcpy(c, cudaC, byteCount, cudaMemcpyDeviceToHost);
+
+	cudaFree(cudaA);
+	cudaFree(cudaB);
+	cudaFree(cudaC);
 }
 }

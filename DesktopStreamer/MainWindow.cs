@@ -21,12 +21,13 @@ namespace DesktopStreamer
             for (int i = 0; i < a.Length; i++)
                 a[i] = i;
 
+            Console.WriteLine(a[10]);
             int[] b = new int[a.Length];
-
             ImageManip.Calc(a,b);
-
-            for (int i = 0; i < b.Length; i++)
-                Console.WriteLine(b[i]);
+            Console.WriteLine(b[10]);
+            int[] c = new int[a.Length];
+            ImageManip.Calc(a, b, c);
+            Console.WriteLine(c[10]);
         }
 
         void SetImage()
