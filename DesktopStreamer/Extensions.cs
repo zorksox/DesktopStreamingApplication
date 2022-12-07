@@ -21,14 +21,11 @@ namespace DesktopStreamer
         }
 
         //same as GetInts, but does not unlock the bits.
-        public static int[] GetIntsLocked(this Bitmap bmp, out IntPtr ptr, out BitmapData bmpData)
+        public static int[] GetIntsLocked(this Bitmap bmp, BitmapData bmpData, Rectangle rect)//, int[] rgbValues)
         {
-            Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
             bmpData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);
-            ptr = bmpData.Scan0;
-            int bytes = Math.Abs(bmpData.Stride) * bmp.Height;
-            int[] rgbValues = new int[bytes / 4];
-            Marshal.Copy(ptr, rgbValues, 0, rgbValues.Length);
+            int[] rgbValues = new int[bmpData.Stride * bmp.Height / 4];
+            Marshal.Copy(bmpData.Scan0, rgbValues, 0, rgbValues.Length);
             //bmp.UnlockBits(bmpData);
             return rgbValues;
         }

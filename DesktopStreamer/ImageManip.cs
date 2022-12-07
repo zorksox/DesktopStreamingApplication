@@ -40,27 +40,27 @@ namespace DesktopStreamer
             }
         }
 
-        public static Bitmap GetDifference(this Bitmap bmp1, Bitmap bmp2)
-        {
-            int[] arrayA = bmp1.GetInts();
+        //public static Bitmap GetDifference(this Bitmap bmp1, Bitmap bmp2)
+        //{
+        //    int[] arrayA = bmp1.GetInts();
 
-            int[] arrayB = bmp2.GetInts();
-            Bitmap bmp3 = new Bitmap(bmp1.Width, bmp1.Height, PixelFormat.Format32bppArgb);
+        //    int[] arrayB = bmp2.GetInts();
+        //    Bitmap bmp3 = new Bitmap(bmp1.Width, bmp1.Height, PixelFormat.Format32bppArgb);
 
-            IntPtr ptr;
-            BitmapData bmpData;
-            int[] arrayC = bmp3.GetIntsLocked(out ptr, out bmpData);
+        //    IntPtr ptr;
+        //    BitmapData bmpData;
+        //    int[] arrayC = bmp3.GetIntsLocked(out ptr, out bmpData);
 
-            fixed (int* a = arrayA, b = arrayB, c = arrayC)
-            {
-                computeDifferenceBytes(a, b, c, arrayA.Length);
+        //    fixed (int* a = arrayA, b = arrayB, c = arrayC)
+        //    {
+        //        computeDifferenceBytes(a, b, c, arrayA.Length);
 
-            }
+        //    }
 
-            Marshal.Copy(arrayC, 0, ptr, arrayC.Length);
-            bmp3.UnlockBits(bmpData);
+        //    Marshal.Copy(arrayC, 0, ptr, arrayC.Length);
+        //    bmp3.UnlockBits(bmpData);
 
-            return bmp3;
-        }
+        //    return bmp3;
+        //}
     }
 }

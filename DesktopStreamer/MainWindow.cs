@@ -1,57 +1,98 @@
 ﻿using System;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using static System.Net.Mime.MediaTypeNames;
-using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Net.Sockets;
+using System.IO;
+using System.Net;
+using System.Text;
+using SharpDX.Direct3D11;
 
 namespace DesktopStreamer
 {
     public partial class MainWindow : Form
     {
+        string ip = "127.0.0.1";
+        int port = 12345;
+        Protocol Protocol = Protocol.TCP;
+        Thread Thread;
+
         public MainWindow()
         {
             InitializeComponent();
-            //SetImage();
-            Bitmap bmp1 = new Bitmap("ds_mini.png");
-            Bitmap bmp2 = new Bitmap("ds2_mini.png");
-            Console.WriteLine(bmp1.PixelFormat);
-            Bitmap difference = bmp1.GetDifference(bmp2);
-            var encoder = ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
-            var encParams = new EncoderParameters() { Param = new[] { new EncoderParameter(Encoder.Quality, 99L) } };
-            bmp1.Save("ds.jpg", encoder, encParams);
-            difference.Save("difference.jpg", encoder, encParams);
-            //SetImage();
-            pictureBox1.Image = difference;
 
-            //int[] a = new int[1000];
-            //for (int i = 0; i < a.Length; i++)
-            //    a[i] = i;
-
-            //Console.WriteLine(a[10]);
-            //int[] b = new int[a.Length];
-            //ImageManip.Calc(a,b);
-            //Console.WriteLine(b[10]);
-            //int[] c = new int[a.Length];
-            //ImageManip.Calc(a, b, c);
-            //Console.WriteLine(c[10]);
-            //ImageManip.CalcBytes(a, b, c);
-            //Console.WriteLine(c[10]);
-
+            if (Protocol == Protocol.UDP)
+            {
+                Thread = new Thread(new ThreadStart(SendUDP));
+                Thread.Start();
+            }
+            else if (Protocol == Protocol.TCP)
+            {
+                Thread = new Thread(new ThreadStart(SendTCP));
+                Thread.Start();
+            }
         }
 
-        void SetImage()
+        void SendTCP()
         {
-            Bitmap bmp = new Bitmap(1920, 1080, PixelFormat.Format32bppArgb);
-            Rectangle bounds = new Rectangle(0, 0, 1920, 1080);
+            TcpClient TcpClient = new TcpClient("localhost", 12345);
+            NetworkStream Stream = TcpClient.GetStream();
 
-            Graphics g = Graphics.FromImage(bmp);
-            g.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
-            Console.WriteLine(bmp.PixelFormat);
-            bmp.Save("./screen.png", ImageFormat.Png);
-            pictureBox1.Image = bmp;
+            try
+            {
+                while (TcpClient.Connected)
+                    Stream.Write(Encoding.UTF8.GetBytes("next"), 0, 4);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
+
+        void SendUDP()
+        {
+            Socket Socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            IPAddress DestinationIP = IPAddress.Parse(ip);
+            ScreenShot Shot = new ScreenShot(true);
+            MemoryStream MemoryStream = new MemoryStream();
+            IPEndPoint ViewerEndPoint = new IPEndPoint(DestinationIP, port);
+            byte frameNumber = 0;
+
+            while (true)
+            {
+                MemoryStream.Dispose();
+                MemoryStream = new MemoryStream();
+                Shot.GenerateSmallBitmap().Save(MemoryStream, GetJpegEncoder(), GetEncoderParams());
+                MemoryStream.WriteByte(frameNumber++);
+                Socket.SendTo(MemoryStream.ToArray(), ViewerEndPoint);
+            }
+        }
+
+        private ImageCodecInfo GetJpegEncoder()
+        {
+            return ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
+        }
+
+        private EncoderParameters GetEncoderParams()
+        {
+            var Params = new EncoderParameters() 
+            { 
+                Param = new[] { new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 50L) } 
+            };
+
+            return Params;
+        }
+
+        private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Thread.Abort();
+        }
+    }
+
+    enum Protocol
+    {
+        UDP,
+        TCP
     }
 }

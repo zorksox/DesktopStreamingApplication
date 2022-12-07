@@ -32,15 +32,30 @@ __global__ void cudaDifferenceBytes(int* a, int* b, int* c)
 {
 	int blockId = blockIdx.x + blockIdx.y * gridDim.x;
 	int i = blockId * (blockDim.x * blockDim.y) + (threadIdx.y * blockDim.x) + threadIdx.x;
+	int differenceThreshold = 30;
 
 	byte* aBytes = (byte*)a;
 	byte* bBytes = (byte*)b;
 	byte* cBytes = (byte*)c;
 
-	cBytes[4 * i] = 128 + (aBytes[4 * i] - bBytes[4 * i]) / 2; //Blue
-	cBytes[4 * i + 1] = 128 + (aBytes[4 * i + 1] - bBytes[4 * i + 1]) / 2; //Green
-	cBytes[4 * i + 2] = 128 + (aBytes[4 * i + 2] - bBytes[4 * i + 2]) / 2; //Red
-	cBytes[4 * i + 3] = 255; //Alpha
+	int byte1 = 4 * i;
+	int byte2 = 4 * i + 1;
+	int byte3 = 4 * i + 2;
+	int byte4 = 4 * i + 3;
+
+	cBytes[byte1] = 128;
+	cBytes[byte2] = 128;
+	cBytes[byte3] = 128;
+	cBytes[byte4] = 255;
+
+	if (abs((int)aBytes[byte1] - (int)bBytes[byte1]) > differenceThreshold)
+		cBytes[byte1] += (aBytes[byte1] - bBytes[byte1]) / 2;
+
+	if (abs((int)aBytes[byte2] - (int)bBytes[byte2]) > differenceThreshold)
+		cBytes[byte2] += (aBytes[byte2] - bBytes[byte2]) / 2;
+
+	if (abs((int)aBytes[byte3] - (int)bBytes[byte3]) > differenceThreshold)
+		cBytes[byte3] += (aBytes[byte3] - bBytes[byte3]) / 2;
 
 	return;
 }
