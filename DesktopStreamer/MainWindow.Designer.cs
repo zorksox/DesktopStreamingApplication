@@ -28,31 +28,44 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.radioButton1 = new System.Windows.Forms.RadioButton();
-            this.radioButton2 = new System.Windows.Forms.RadioButton();
+            this.udpButton = new System.Windows.Forms.RadioButton();
+            this.tcpButton = new System.Windows.Forms.RadioButton();
+            this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
-            // radioButton1
+            // udpButton
             // 
-            this.radioButton1.AutoSize = true;
-            this.radioButton1.Location = new System.Drawing.Point(13, 13);
-            this.radioButton1.Name = "radioButton1";
-            this.radioButton1.Size = new System.Drawing.Size(48, 17);
-            this.radioButton1.TabIndex = 0;
-            this.radioButton1.TabStop = true;
-            this.radioButton1.Text = "UDP";
-            this.radioButton1.UseVisualStyleBackColor = true;
+            this.udpButton.AutoSize = true;
+            this.udpButton.Checked = true;
+            this.udpButton.Location = new System.Drawing.Point(13, 13);
+            this.udpButton.Name = "udpButton";
+            this.udpButton.Size = new System.Drawing.Size(48, 17);
+            this.udpButton.TabIndex = 0;
+            this.udpButton.TabStop = true;
+            this.udpButton.Text = "UDP";
+            this.udpButton.UseVisualStyleBackColor = true;
+            this.udpButton.Click += new System.EventHandler(this.UDPButton_Clicked);
             // 
-            // radioButton2
+            // tcpButton
             // 
-            this.radioButton2.AutoSize = true;
-            this.radioButton2.Location = new System.Drawing.Point(13, 37);
-            this.radioButton2.Name = "radioButton2";
-            this.radioButton2.Size = new System.Drawing.Size(46, 17);
-            this.radioButton2.TabIndex = 1;
-            this.radioButton2.TabStop = true;
-            this.radioButton2.Text = "TCP";
-            this.radioButton2.UseVisualStyleBackColor = true;
+            this.tcpButton.AutoSize = true;
+            this.tcpButton.Location = new System.Drawing.Point(13, 37);
+            this.tcpButton.Name = "tcpButton";
+            this.tcpButton.Size = new System.Drawing.Size(46, 17);
+            this.tcpButton.TabIndex = 1;
+            this.tcpButton.Text = "TCP";
+            this.tcpButton.UseVisualStyleBackColor = true;
+            this.tcpButton.Click += new System.EventHandler(this.TCPButton_Clicked);
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(12, 232);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 2;
+            this.button1.Text = "Start";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // MainWindow
             // 
@@ -60,13 +73,14 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.ClientSize = new System.Drawing.Size(444, 267);
-            this.Controls.Add(this.radioButton2);
-            this.Controls.Add(this.radioButton1);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.tcpButton);
+            this.Controls.Add(this.udpButton);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "MainWindow";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "Co-op Viewer";
+            this.Text = "DesktopStreamer";
             this.TopMost = true;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainWindow_FormClosing);
             this.ResumeLayout(false);
@@ -76,8 +90,9 @@
 
         #endregion
 
-        private System.Windows.Forms.RadioButton radioButton1;
-        private System.Windows.Forms.RadioButton radioButton2;
+        private System.Windows.Forms.RadioButton udpButton;
+        private System.Windows.Forms.RadioButton tcpButton;
+        private System.Windows.Forms.Button button1;
     }
 }
 

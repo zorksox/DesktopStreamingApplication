@@ -12,23 +12,28 @@ namespace DesktopViewer
         Size Original = new Size(384, 216);
         Size SizeToAdd = new Size(48, 27);
         Position Position;
-        Protocol Protocol = Protocol.TCP;
+        Protocol Protocol = Protocol.UDP;
         int port = 12345;
         string ip = "127.0.0.1";
+        Thread? Thread;
 
         public DesktopViewer()
         {
             InitializeComponent();
-            Thread Thread;
+        }
 
+        private void Start()
+        {
             if (Protocol == Protocol.UDP)
             {
                 Thread = new Thread(new ThreadStart(ReceiveUDPData));
+                Thread.IsBackground = true;
                 Thread.Start();
             }
-            if (Protocol == Protocol.TCP)
+            else if (Protocol == Protocol.TCP)
             {
                 Thread = new Thread(new ThreadStart(ReceiveTCPData));
+                Thread.IsBackground = true;
                 Thread.Start();
             }
         }
@@ -40,14 +45,24 @@ namespace DesktopViewer
             TcpServer.Start();
             TcpClient TcpClient = TcpServer.AcceptTcpClient();
             NetworkStream Stream = TcpClient.GetStream();
-            byte[] Request = new byte[4];
+            Span<byte> byteSpan = new byte[20000];
+            int byteCount = 0;
+            ImageConverter ImageConverter = new ImageConverter();
 
             while (true)
             {
-                Stream.Read(Request, 0, Request.Length);
-                Console.WriteLine(Request);
-            }
+                if (!TcpClient.Connected)
+                    TcpClient = TcpServer.AcceptTcpClient();
 
+                byteCount = 0;
+                byteCount = Stream.Read(byteSpan);
+
+                if (byteCount > 0)
+                {
+                    byte[] byteArray = byteSpan.Slice(0, byteCount).ToArray();
+                    BackgroundImage = ImageConverter.ConvertFrom(byteArray) as Bitmap;
+                }
+            }
         }
 
         private void SetText(string message)
@@ -188,6 +203,30 @@ namespace DesktopViewer
             int left = Screen.PrimaryScreen.Bounds.Right - Size.Width;
 
             Location = new Point(left, top);
+        }
+
+        private void DesktopViewer_FormClosing(object sender, FormClosingEventArgs e)
+        {
+#pragma warning disable SYSLIB0006
+            Thread?.Abort();
+#pragma warning restore SYSLIB0006
+        }
+
+        private void UDPButton_Clicked(object sender, EventArgs e)
+        {
+            Text = "UDP mode";
+            Protocol = Protocol.UDP;
+        }
+
+        private void TCPButton_Clicked(object sender, EventArgs e)
+        {
+            Text = "TCP mode";
+            Protocol = Protocol.TCP;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Start();
         }
     }
 

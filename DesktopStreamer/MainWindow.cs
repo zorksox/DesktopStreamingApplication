@@ -6,8 +6,6 @@ using System.Threading;
 using System.Net.Sockets;
 using System.IO;
 using System.Net;
-using System.Text;
-using SharpDX.Direct3D11;
 
 namespace DesktopStreamer
 {
@@ -15,34 +13,48 @@ namespace DesktopStreamer
     {
         string ip = "127.0.0.1";
         int port = 12345;
-        Protocol Protocol = Protocol.TCP;
+        Protocol Protocol = Protocol.UDP;
         Thread Thread;
+        TcpClient TcpClient;
 
         public MainWindow()
         {
             InitializeComponent();
+        }
 
+        private void Start()
+        {
             if (Protocol == Protocol.UDP)
             {
                 Thread = new Thread(new ThreadStart(SendUDP));
+                Thread.IsBackground = true;
                 Thread.Start();
             }
             else if (Protocol == Protocol.TCP)
             {
                 Thread = new Thread(new ThreadStart(SendTCP));
+                Thread.IsBackground = true;
                 Thread.Start();
             }
         }
 
         void SendTCP()
         {
-            TcpClient TcpClient = new TcpClient("localhost", 12345);
+            ScreenShot Shot = new ScreenShot();
+            TcpClient = new TcpClient("localhost", 12345);
             NetworkStream Stream = TcpClient.GetStream();
+            int frameCount = 0;
 
             try
             {
                 while (TcpClient.Connected)
-                    Stream.Write(Encoding.UTF8.GetBytes("next"), 0, 4);
+                {
+                    MemoryStream MemoryStream = new MemoryStream();
+                    Shot.GenerateSmallBitmap().Save(MemoryStream, GetJpegEncoder(), GetEncoderParams());
+                    Stream.Write(MemoryStream.ToArray(), 0, (int)MemoryStream.Length);
+                    SetText("" + frameCount++);
+                    MemoryStream.Dispose();
+                }
             }
             catch (Exception e)
             {
@@ -69,6 +81,11 @@ namespace DesktopStreamer
             }
         }
 
+        private void SetText(string message)
+        {
+            Invoke((MethodInvoker)delegate { Text = message; });
+        }
+
         private ImageCodecInfo GetJpegEncoder()
         {
             return ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
@@ -86,9 +103,26 @@ namespace DesktopStreamer
 
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Thread.Abort();
+            Thread?.Abort();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Start();
+        }
+
+        private void UDPButton_Clicked(object sender, EventArgs e)
+        {
+            Protocol = Protocol.UDP;
+        }
+
+        private void TCPButton_Clicked(object sender, EventArgs e)
+        {
+            Protocol = Protocol.TCP;
         }
     }
+
+
 
     enum Protocol
     {
