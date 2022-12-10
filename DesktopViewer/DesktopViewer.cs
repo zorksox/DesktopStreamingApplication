@@ -1,9 +1,5 @@
-using System.Drawing;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Windows.Forms;
 
 namespace DesktopViewer
 {
@@ -20,6 +16,7 @@ namespace DesktopViewer
         public DesktopViewer()
         {
             InitializeComponent();
+            ipTextBox.Text = Dns.GetHostEntry(Dns.GetHostName()).AddressList[1].ToString();
         }
 
         private void Start()
@@ -36,38 +33,52 @@ namespace DesktopViewer
                 Thread.IsBackground = true;
                 Thread.Start();
             }
+            else if (Protocol == Protocol.QUIC)
+            {
+
+            }
         }
 
         private void ReceiveTCPData()
         {
-            SetText("Waiting for TCP server....");
-            TcpListener TcpServer = new TcpListener(IPAddress.Loopback, port);
+            TcpListener TcpServer = new TcpListener(IPAddress.Parse(ip), port);
             TcpServer.Start();
+
             TcpClient TcpClient = TcpServer.AcceptTcpClient();
+            TcpClient.ReceiveBufferSize = 20000;
+            TcpClient.ReceiveTimeout = 1000;
+
             NetworkStream Stream = TcpClient.GetStream();
-            Span<byte> byteSpan = new byte[20000];
-            int byteCount = 0;
             ImageConverter ImageConverter = new ImageConverter();
+            StreamWriter FileStream = File.AppendText("viewerOutput.txt");
+
+            Span<byte> byteSpan = new byte[20000];
+            int droppedFrames = 0;
 
             while (true)
             {
-                if (!TcpClient.Connected)
-                    TcpClient = TcpServer.AcceptTcpClient();
-
-                byteCount = 0;
-                byteCount = Stream.Read(byteSpan);
+                int byteCount = Stream.Read(byteSpan);
 
                 if (byteCount > 0)
                 {
                     byte[] byteArray = byteSpan.Slice(0, byteCount).ToArray();
-                    BackgroundImage = ImageConverter.ConvertFrom(byteArray) as Bitmap;
+
+                    try
+                    {
+                        BackgroundImage = ImageConverter.ConvertFrom(byteArray) as Bitmap;
+                    }
+                    catch (Exception ex)
+                    {
+                        droppedFrames++;
+                        SetText(droppedFramesLabel, droppedFrames.ToString());
+                    }
                 }
             }
         }
 
-        private void SetText(string message)
+        private void SetText(Control c, string message)
         {
-            Invoke((MethodInvoker)delegate { Text = message; });
+            c.Invoke((MethodInvoker)delegate { c.Text = message; });
         }
 
         private void ReceiveUDPData()
@@ -75,13 +86,14 @@ namespace DesktopViewer
             UdpClient client = new UdpClient(port);
             IPEndPoint groupEP = new IPEndPoint(IPAddress.Any, port);
             byte[] bytes;
+            int receivedFrames = 0;
 
             while (true)
             {
                 bytes = client.Receive(ref groupEP);
-                BackgroundImage?.Dispose();
                 BackgroundImage = new ImageConverter().ConvertFrom(bytes) as Bitmap;
-                Text = bytes.Last().ToString();
+                receivedFrames++;
+                SetText(receivedFramesLabel, receivedFrames.ToString());
             }
         }
 
@@ -205,13 +217,6 @@ namespace DesktopViewer
             Location = new Point(left, top);
         }
 
-        private void DesktopViewer_FormClosing(object sender, FormClosingEventArgs e)
-        {
-#pragma warning disable SYSLIB0006
-            Thread?.Abort();
-#pragma warning restore SYSLIB0006
-        }
-
         private void UDPButton_Clicked(object sender, EventArgs e)
         {
             Text = "UDP mode";
@@ -227,6 +232,27 @@ namespace DesktopViewer
         private void button1_Click(object sender, EventArgs e)
         {
             Start();
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            ip = ipTextBox.Text;
+        }
+
+        private void DesktopViewer_Deactivate(object sender, EventArgs e)
+        {
+            ipTextBox.Visible = false;
+            udpButton.Visible = false;
+            tcpButton.Visible = false;
+            button1.Visible = false;
+        }
+
+        private void DesktopViewer_Activated(object sender, EventArgs e)
+        {
+            ipTextBox.Visible = true;
+            udpButton.Visible = true;
+            tcpButton.Visible = true;
+            button1.Visible = true;
         }
     }
 
@@ -245,6 +271,7 @@ namespace DesktopViewer
     enum Protocol
     {
         UDP,
-        TCP
+        TCP,
+        QUIC
     }
 }
